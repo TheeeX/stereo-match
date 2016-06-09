@@ -1,0 +1,14 @@
+﻿  Source.cpp
+c:\users\karan\documents\visual studio 2015\projects\stereo-match\stereo-match\source.cpp(52): warning C4129: 'p': unrecognized character escape sequence
+c:\users\karan\documents\visual studio 2015\projects\stereo-match\stereo-match\source.cpp(52): warning C4129: 'i': unrecognized character escape sequence
+c:\users\karan\documents\visual studio 2015\projects\stereo-match\stereo-match\source.cpp(53): warning C4129: 'p': unrecognized character escape sequence
+c:\users\karan\documents\visual studio 2015\projects\stereo-match\stereo-match\source.cpp(53): warning C4129: 'i': unrecognized character escape sequence
+c:\users\karan\documents\visual studio 2015\projects\stereo-match\stereo-match\source.cpp(54): warning C4129: 'p': unrecognized character escape sequence
+c:\users\karan\documents\visual studio 2015\projects\stereo-match\stereo-match\source.cpp(54): warning C4129: 'c': unrecognized character escape sequence
+c:\users\karan\documents\visual studio 2015\projects\stereo-match\stereo-match\source.cpp(54): warning C4129: 'i': unrecognized character escape sequence
+c:\users\karan\documents\visual studio 2015\projects\stereo-match\stereo-match\source.cpp(55): warning C4129: 'p': unrecognized character escape sequence
+c:\users\karan\documents\visual studio 2015\projects\stereo-match\stereo-match\source.cpp(55): warning C4129: 'c': unrecognized character escape sequence
+c:\users\karan\documents\visual studio 2015\projects\stereo-match\stereo-match\source.cpp(55): warning C4129: 'e': unrecognized character escape sequence
+c:\users\karan\documents\visual studio 2015\projects\stereo-match\stereo-match\source.cpp(56): warning C4129: 'd': unrecognized character escape sequence
+c:\users\karan\documents\visual studio 2015\projects\stereo-match\stereo-match\source.cpp(57): warning C4129: 'p': unrecognized character escape sequence
+opencv_world310d.lib(opencv_world310d.dll) : fatal error LNK1112: module machine type 'x64' conflicts with target machine type 'X86'
