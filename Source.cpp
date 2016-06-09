@@ -29,9 +29,12 @@ std::string point_cloud_filename = "E:\\pc.png";
 
 enum { STEREO_BM = 0, STEREO_SGBM = 1, STEREO_HH = 2, STEREO_VAR = 3, STEREO_3WAY = 4 };
 int alg = STEREO_3WAY;	// STEREO_3WAY, STEREO_VAR, STEREO_HH, STEREO_SGBM;
+std::string _alg = "sgbm3way";
 int SADWindowSize = 15, numberOfDisparities = 96;
 bool no_display = false;
 float scale = 1.0;
+Mat map11, map12, map21, map22;
+Mat img1r, img2r;
 
 Ptr<StereoBM> bm = StereoBM::create(16, 9);
 Ptr<StereoSGBM> sgbm = StereoSGBM::create(0, 16, 3);
@@ -40,32 +43,32 @@ class stereocam1 {
 public:
 
 	FileStorage fsL;
-	Mat cameraMatrix[2], distCoeffs[2];
-	Mat R1, R2, P1, P2;
+	Mat M1, M2, D1, D2;
+	Mat R1, R2, P1, P2, R, T, Q;
 	Mat rmap[2][2];
 	Size imageSize;
 
 	stereocam1() {
 		printf("Constructor called!\n");
 
-		cameraMatrix[0] = Mat::eye(3, 3, CV_64F);
-		cameraMatrix[1] = Mat::eye(3, 3, CV_64F);
+		M1 = Mat::eye(3, 3, CV_64F);
+		M2 = Mat::eye(3, 3, CV_64F);
 
 		fsL.open(intrinsic_filename, FileStorage::READ);
 		if (fsL.isOpened()) {
-			fsL["M1"] >> cameraMatrix[0];
-			fsL["D1"] >> distCoeffs[0];
-			fsL["M2"] >> cameraMatrix[1];
-			fsL["D2"] >> distCoeffs[1];
+			fsL["M1"] >> M1;
+			fsL["D1"] >> D1;
+			fsL["M2"] >> M2;
+			fsL["D2"] >> D2;
 			fsL.release();
 		}
 		else
 			std::cout << "Error: Could not open intrinsics file (intrinsic.yml)." << std::endl;
 		//std::cout << "Reading extrinsics.yml - left/right.yaml "<< std::endl;
-		std::cout << "M1:" << cameraMatrix[0] << std::endl;
-		std::cout << "D1:" << distCoeffs[0] << std::endl;
-		std::cout << "M2:" << cameraMatrix[1] << std::endl;
-		std::cout << "D2:" << distCoeffs[1] << std::endl;
+		std::cout << "M1:" << M1 << std::endl;
+		std::cout << "D1:" << D1 << std::endl;
+		std::cout << "M2:" << M2 << std::endl;
+		std::cout << "D2:" << D2 << std::endl;
 		FileStorage fsR;
 		fsR.open(extrinsic_filename, FileStorage::READ);
 		if (fsR.isOpened()) {
@@ -73,6 +76,9 @@ public:
 			fsR["R2"] >> R2;
 			fsR["P1"] >> P1;
 			fsR["P2"] >> P2;
+			fsR["R"] >> R;
+			fsR["T"] >> T;
+			fsR["Q"] >> Q;
 			fsR.release();
 		}
 		else
@@ -83,11 +89,16 @@ public:
 		std::cout << "R2:" << R2 << std::endl;
 		std::cout << "P2:" << P2 << std::endl;
 
-		Mat crp = imread("./images/image_left_1.png");
+		Mat crp = imread("C:\\ps4eye\\images\\image_left_1.png");
 		imageSize = crp.size();
 
-		initUndistortRectifyMap(cameraMatrix[0], distCoeffs[0], R1, P1, imageSize, CV_16SC2, rmap[0][0], rmap[0][1]);
-		initUndistortRectifyMap(cameraMatrix[1], distCoeffs[1], R2, P2, imageSize, CV_16SC2, rmap[1][0], rmap[1][1]);
+		//initUndistortRectifyMap(M1, D1, R1, P1, imageSize, CV_16SC2, rmap[0][0], rmap[0][1]);
+		//initUndistortRectifyMap(M2, D2, R2, P2, imageSize, CV_16SC2, rmap[1][0], rmap[1][1]);
+
+
+		initUndistortRectifyMap(M1, D1, R1, P1, imageSize, CV_16SC2, rmap[0][0], rmap[0][1]);
+		initUndistortRectifyMap(M2, D2, R2, P2, imageSize, CV_16SC2, rmap[1][0], rmap[1][1]);
+		std::cout << "Done initdist..." << std::endl;
 	}
 };
 stereocam1 ps4cam;
@@ -123,46 +134,14 @@ static void saveXYZ(const char* filename, const Mat& mat)
 }
 
 //int main(int argc, char** argv)
-int main()
+int show_disparity()
 {
+	alg = _alg == "bm" ? STEREO_BM :
+		_alg == "sgbm" ? STEREO_SGBM :
+		_alg == "hh" ? STEREO_HH :
+		_alg == "var" ? STEREO_VAR :
+		_alg == "sgbm3way" ? STEREO_3WAY : -1;
 
-	/*
-	cv::CommandLineParser parser(argc, argv,
-        "{help h||}{algorithm||}{max-disparity|0|}{blocksize|0|}{no-display||}{scale|1|}{i||}{e||}{o||}{p||}");
-	if(parser.has("help"))
-    {
-        print_help();
-        return 0;
-    }
-    img1_filename = parser.get<std::string>(0);
-    img2_filename = parser.get<std::string>(1);
-    if (parser.has("algorithm"))
-    {
-        std::string _alg = parser.get<std::string>("algorithm");
-        alg = _alg == "bm" ? STEREO_BM :
-            _alg == "sgbm" ? STEREO_SGBM :
-            _alg == "hh" ? STEREO_HH :
-            _alg == "var" ? STEREO_VAR :
-            _alg == "sgbm3way" ? STEREO_3WAY : -1;
-    }
-    numberOfDisparities = parser.get<int>("max-disparity");
-    SADWindowSize = parser.get<int>("blocksize");
-    scale = parser.get<float>("scale");
-    no_display = parser.has("no-display");
-    if( parser.has("i") )
-        intrinsic_filename = parser.get<std::string>("i");
-    if( parser.has("e") )
-        extrinsic_filename = parser.get<std::string>("e");
-    if( parser.has("o") )
-        disparity_filename = parser.get<std::string>("o");
-    if( parser.has("p") )
-        point_cloud_filename = parser.get<std::string>("p");
-    if (!parser.check())
-    {
-        parser.printErrors();
-        return 1;
-    }
-	*/
     if( alg < 0 )
     {
         printf("Command-line parameter error: Unknown stereo algorithm\n\n");
@@ -231,51 +210,11 @@ int main()
 
     Rect roi1, roi2;
     Mat Q;
+	
+	std::cout << "#2 --> remap (...)" << std::endl;
 
-    if( !intrinsic_filename.empty() )
-    {
-        // reading intrinsic parameters
-        FileStorage fs(intrinsic_filename, FileStorage::READ);
-        if(!fs.isOpened())
-        {
-            printf("Failed to open file %s\n", intrinsic_filename.c_str());
-            return -1;
-        }
-
-        Mat M1, D1, M2, D2;
-        fs["M1"] >> M1;
-        fs["D1"] >> D1;
-        fs["M2"] >> M2;
-        fs["D2"] >> D2;
-
-        M1 *= scale;
-        M2 *= scale;
-
-        fs.open(extrinsic_filename, FileStorage::READ);
-        if(!fs.isOpened())
-        {
-            printf("Failed to open file %s\n", extrinsic_filename.c_str());
-            return -1;
-        }
-
-        Mat R, T, R1, P1, R2, P2;
-		//static Mat R;
-        //fs["R"] >> R;
-        fs["T"] >> T;
-
-        //stereoRectify( M1, D1, M2, D2, img_size, R, T, R1, R2, P1, P2, Q, CALIB_ZERO_DISPARITY, -1, img_size, &roi1, &roi2 );
-
-        Mat map11, map12, map21, map22;
-        initUndistortRectifyMap(M1, D1, R1, P1, img_size, CV_16SC2, map11, map12);
-        initUndistortRectifyMap(M2, D2, R2, P2, img_size, CV_16SC2, map21, map22);
-
-        Mat img1r, img2r;
-        remap(img1, img1r, map11, map12, INTER_LINEAR);
-        remap(img2, img2r, map21, map22, INTER_LINEAR);
-
-        img1 = img1r;
-        img2 = img2r;
-    }
+	remap(img1, img1, ps4cam.rmap[0][0], ps4cam.rmap[0][1], INTER_LINEAR);
+	remap(img2, img2, ps4cam.rmap[1][0], ps4cam.rmap[1][1], INTER_LINEAR);
 
     numberOfDisparities = numberOfDisparities > 0 ? numberOfDisparities : ((img_size.width/8) + 15) & -16;
 
@@ -352,12 +291,21 @@ int main()
     if(!point_cloud_filename.empty())
     {
         printf("storing the point cloud...");
+		stereoRectify(ps4cam.M1, ps4cam.D1, ps4cam.M2, ps4cam.D2, img_size, ps4cam.R, ps4cam.T, ps4cam.R1, ps4cam.R2, ps4cam.P1, ps4cam.P2, Q, CALIB_ZERO_DISPARITY, -1, img_size, &roi1, &roi2);
         fflush(stdout);
         Mat xyz;
         reprojectImageTo3D(disp, xyz, Q, true);
         saveXYZ(point_cloud_filename.c_str(), xyz);
         printf("\n");
     }
+}
 
-    return 0;
+int main() {
+	show_disparity();
+
+	int asdf;
+	std::cout << "asdf : ";
+	std::cin >> asdf;
+
+	return 0;
 }

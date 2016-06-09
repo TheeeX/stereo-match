@@ -1,2 +1,3 @@
 ﻿  Source.cpp
+c:\users\karan\documents\visual studio 2015\projects\stereo-match\stereo-match\source.cpp(301): warning C4715: 'show_disparity': not all control paths return a value
   stereo-match.vcxproj -> C:\Users\karan\Documents\Visual Studio 2015\Projects\stereo-match\x64\Debug\stereo-match.exe
